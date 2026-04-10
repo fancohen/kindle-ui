@@ -11,12 +11,33 @@ const environmentLight = css`
 
 const environmentDark = css`
     linear-gradient(
-        237deg, 
-        rgba(191,191,191,1) 0%, 
+        237deg,
+        rgba(191,191,191,1) 0%,
         rgba(0,0,0,1) 45%)
 `;
 
-const StyledContainer = styled.div`
+const skinBackground = (skin: string, opacity: number) => css`
+	/* Layer 1: Specular highlight — simulates overhead light source */
+	linear-gradient(
+		235deg,
+		rgba(255, 255, 255, 0.15) 0%,
+		rgba(255, 255, 255, 0.03) 25%,
+		rgba(0, 0, 0, 0) 50%
+	),
+	/* Layer 2: Darkening overlay — makes the image feel "printed" onto the shell */
+	linear-gradient(
+		rgba(0, 0, 0, ${1 - opacity}),
+		rgba(0, 0, 0, ${1 - opacity})
+	),
+	/* Layer 3: User artwork */
+	url(${skin}),
+	/* Layer 4: Base color fallback */
+	#1a1a1a;
+	background-size: 100%, 100%, cover, 100%;
+	background-position: center;
+`;
+
+const StyledContainer = styled.div<{ dark?: boolean; skin?: string; skinOpacity?: number }>`
 	@media screen and (max-width: 768px) {
 		.hardButton {
 			display: none;
@@ -40,8 +61,12 @@ const StyledContainer = styled.div`
 		padding-right: 145px;
 		border-radius: 30px;
 		background: ${(props) =>
-			props.dark ? environmentDark : environmentLight};
-		border: 8px double #3a3737;
+			props.skin
+				? skinBackground(props.skin, props.skinOpacity ?? 0.45)
+				: props.dark
+				? environmentDark
+				: environmentLight};
+		border: 8px double ${(props) => (props.skin ? "#2a2a2a" : "#3a3737")};
 		overflow: hidden;
 		height: 100vh;
 		box-shadow: #0000004f 0px 0px 11px 6px;
@@ -50,12 +75,15 @@ const StyledContainer = styled.div`
 			width: 10px;
 			height: var(--hbutton-height);
 			border-radius: 20px;
-			background: #414449;
+			background: ${(props) =>
+				props.skin
+					? "rgba(30, 30, 30, 0.8)"
+					: "#414449"};
 			position: absolute;
 			right: 35px;
 			top: 50vh;
 			border-left: 3px solid black;
-			border-right: 4px ridge #888;
+			border-right: 4px ridge ${(props) => (props.skin ? "#555" : "#888")};
 			border-top: 1px solid black;
 			border-bottom: 1px solid black;
 		}
@@ -157,11 +185,15 @@ const StyledContainer = styled.div`
 export interface IContainer {
 	children: JSX.Element | JSX.Element[];
 	dark?: boolean;
+	/** URL of the skin image to apply as device shell texture */
+	skin?: string;
+	/** Opacity of the skin artwork (0-1), default 0.45. Higher = more visible artwork. */
+	skinOpacity?: number;
 }
 
-const Container: React.FC<IContainer> = ({ children, dark }) => {
+const Container: React.FC<IContainer> = ({ children, dark, skin, skinOpacity }) => {
 	return (
-		<StyledContainer dark={dark}>
+		<StyledContainer dark={dark} skin={skin} skinOpacity={skinOpacity}>
 			<div className="hardButton hardButton-up"></div>
 			<div className="hardButton hardButton-down"></div>
 			<div className="screen">

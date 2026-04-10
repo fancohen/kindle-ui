@@ -81,9 +81,10 @@ export default (props: IStatubar) => {
 	const [timeStr, setTimeStr] = useState(getTimeStr());
 
 	useEffect(() => {
-		setInterval(() => {
+		const timer = setInterval(() => {
 			setTimeStr(getTimeStr());
 		}, 1000);
+		return () => clearInterval(timer);
 	}, []);
 
 	return (

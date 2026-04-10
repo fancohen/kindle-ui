@@ -12,7 +12,7 @@ const SearchBar = ({ className, disable, ...rest }: ISearchBarProps) => {
 	return (
 		<div className={className}>
 			<SearchOutlinIcon />
-			<input placeholder="Search" disabled={disable} {...rest}></input>
+			<input placeholder={rest.placeholder || "Search"} disabled={disable} {...rest}></input>
 		</div>
 	);
 };

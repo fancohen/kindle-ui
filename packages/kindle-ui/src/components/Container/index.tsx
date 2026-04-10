@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import styled from "styled-components";
 
 const StyledContainer = styled.div`
@@ -25,14 +25,18 @@ export interface IContainer {
 	deviceFrame?: React.ElementType;
 	dark?: boolean;
 	setDark?: React.Dispatch<React.SetStateAction<boolean>>;
+	/** URL of the skin image for device frame */
+	skin?: string;
+	/** Opacity of the skin artwork (0-1) */
+	skinOpacity?: number;
 }
 
-const Container: React.FC<IContainer> = ({ children, deviceFrame, dark }) => {
+const Container: React.FC<IContainer> = ({ children, deviceFrame, dark, skin, skinOpacity }) => {
 	if (deviceFrame) {
 		let DeviceFrame = deviceFrame;
 		return (
 			<StyledContainer dark={dark}>
-				<DeviceFrame dark={dark}>{children}</DeviceFrame>
+				<DeviceFrame dark={dark} skin={skin} skinOpacity={skinOpacity}>{children}</DeviceFrame>
 			</StyledContainer>
 		);
 	}
