@@ -16,46 +16,6 @@ const environmentDark = css`
         rgba(0,0,0,1) 45%)
 `;
 
-const skinBackground = (skin: string, opacity: number) => css`
-	#1a1a1a;
-
-	/* Skin texture layer — behind screen/buttons, uses pseudo-element so filter doesn't affect content */
-	&::before {
-		content: "";
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		border-radius: inherit;
-		/* The artwork, with a noise texture overlaid via SVG for matte grain */
-		background:
-			/* Specular: subtle top-left highlight simulating overhead light on curved plastic */
-			radial-gradient(
-				ellipse at 25% 15%,
-				rgba(255, 255, 255, 0.08) 0%,
-				rgba(255, 255, 255, 0) 50%
-			),
-			/* Matte grain: SVG noise pattern to simulate plastic/resin surface texture */
-			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E"),
-			/* Edge shadow: darker at edges for 3D depth of a curved shell */
-			radial-gradient(
-				ellipse at 40% 50%,
-				rgba(0, 0, 0, 0) 50%,
-				rgba(0, 0, 0, 0.3) 100%
-			),
-			/* The artwork itself */
-			url(${skin});
-		background-size: 100%, 300px 300px, 100%, cover;
-		background-position: center, center, center, center;
-		background-repeat: no-repeat, repeat, no-repeat, no-repeat;
-		/* Desaturate to simulate ink/dye on matte material + slight darken */
-		filter: saturate(${0.15 + opacity * 0.35}) brightness(${0.35 + opacity * 0.3}) contrast(${0.85 + opacity * 0.1});
-		z-index: 0;
-	}
-
-`;
-
 const StyledContainer = styled.div<{ dark?: boolean; skin?: string; skinOpacity?: number }>`
 	@media screen and (max-width: 768px) {
 		.hardButton {
@@ -79,13 +39,38 @@ const StyledContainer = styled.div<{ dark?: boolean; skin?: string; skinOpacity?
 		padding-bottom: 34px;
 		padding-right: 145px;
 		border-radius: 30px;
-		background: ${(props) =>
-			props.skin
-				? skinBackground(props.skin, props.skinOpacity ?? 0.45)
-				: props.dark
-				? environmentDark
-				: environmentLight};
-		border: 8px double ${(props) => (props.skin ? "#2a2a2a" : "#3a3737")};
+		background: ${(props) => {
+			if (props.skin) {
+				const o = props.skinOpacity ?? 0.45;
+				// Multi-layer background: specular highlight + noise grain + vignette + darkening overlay + artwork + base
+				return `
+					radial-gradient(
+						ellipse at 25% 15%,
+						rgba(255, 255, 255, 0.1) 0%,
+						rgba(255, 255, 255, 0) 50%
+					),
+					url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+					radial-gradient(
+						ellipse at 40% 50%,
+						transparent 40%,
+						rgba(0, 0, 0, 0.35) 100%
+					),
+					linear-gradient(
+						rgba(0, 0, 0, ${1 - o}),
+						rgba(0, 0, 0, ${Math.min(1, (1 - o) + 0.15)})
+					),
+					url(${props.skin}),
+					#1a1a1a
+				`;
+			}
+			return props.dark ? environmentDark : environmentLight;
+		}};
+		${(props) => props.skin ? `
+			background-size: 100%, 200px 200px, 100%, 100%, cover, 100%;
+			background-position: center;
+			background-repeat: no-repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+		` : ''}
+		border: 8px double #3a3737;
 		overflow: hidden;
 		height: 100vh;
 		box-shadow: #0000004f 0px 0px 11px 6px;
@@ -94,15 +79,12 @@ const StyledContainer = styled.div<{ dark?: boolean; skin?: string; skinOpacity?
 			width: 10px;
 			height: var(--hbutton-height);
 			border-radius: 20px;
-			background: ${(props) =>
-				props.skin
-					? "rgba(30, 30, 30, 0.8)"
-					: "#414449"};
+			background: #414449;
 			position: absolute;
 			right: 35px;
 			top: 50vh;
 			border-left: 3px solid black;
-			border-right: 4px ridge ${(props) => (props.skin ? "#555" : "#888")};
+			border-right: 4px ridge #888;
 			border-top: 1px solid black;
 			border-bottom: 1px solid black;
 		}
@@ -211,22 +193,11 @@ export interface IContainer {
 }
 
 const Container: React.FC<IContainer> = ({ children, dark, skin, skinOpacity }) => {
-	const screenStyle = skin ? {
-		position: 'relative' as const,
-		zIndex: 1,
-		backgroundColor: dark ? '#000' : '#f7f7f7',
-	} : undefined;
-
-	const buttonStyle = skin ? {
-		position: 'relative' as const,
-		zIndex: 2,
-	} : undefined;
-
 	return (
 		<StyledContainer dark={dark} skin={skin} skinOpacity={skinOpacity}>
-			<div className="hardButton hardButton-up" style={buttonStyle}></div>
-			<div className="hardButton hardButton-down" style={buttonStyle}></div>
-			<div className="screen" style={screenStyle}>
+			<div className="hardButton hardButton-up"></div>
+			<div className="hardButton hardButton-down"></div>
+			<div className="screen">
 				<div className="shadowTop"></div>
 				<div className="content">
 					<div>{children}</div>
